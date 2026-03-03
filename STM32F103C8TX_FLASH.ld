@@ -44,8 +44,10 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM     (xrw)    : ORIGIN = 0x20000000,   LENGTH = 19K
-  FLASH    (rx)    : ORIGIN = 0x8000000,    LENGTH = 48K
+  RAM     (xrw)    : ORIGIN = 0x20000000,   LENGTH = 15K
+  FLASH    (rx)    : ORIGIN = 0x8004000,    LENGTH = 48K
+  
+  VAR_RAM (xrw)    : ORIGIN = 0x20003C00,   LENGTH = 4K
 
   CALRAM	(xrw)  : ORIGIN = 0x20004C00,   LENGTH = 1K
   CALFLASH  (rx)   : ORIGIN = 0x08003C00,   LENGTH = 1K
@@ -190,18 +192,39 @@ SECTIONS
   }
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
+  
+  /* Variables struct section */
+  .var_ram (NOLOAD) :
+  {
+     . = ALIGN(4);
+     KEEP(*(.var_ram_sec))
+     KEEP(*(.var_ram_sec*))
+     . = ALIGN(4);
+  } >VAR_RAM
 
   /* Calibration support */
-  .calib_ram :
+  .calib_ram (NOLOAD):
   {
     . = ALIGN(4);
-  	*(.Calib_ram*);
+  	KEEP(*(.calib_ram_sec*));
   } >CALRAM
   
-  .calib_flash :
+  .calib_flash (NOLOAD):
   {
     . = ALIGN(4);
-  	*(.Calib_flash*);
+  	KEEP(*(.calib_flash_sec*));
   } >CALFLASH
+
+    /* Version of app */
+  .boot_vers_block 0x8003BA0 (NOLOAD):
+  {
+  	KEEP(*(.boot_vers_sec))
+  } >BOOT_FLASH
   
+  /* Versioh of application */
+  .app_vers_block 0x800FFA0 :
+  {
+  	KEEP(*(.app_vers_sec))
+  } >FLASH
+
 }

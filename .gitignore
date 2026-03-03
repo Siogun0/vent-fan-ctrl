@@ -1,5 +1,9 @@
 /Debug/
 /Release/
+vent-common
+MetaData
+bn.h
+personal.h
 
 # Prerequisites
 *.d

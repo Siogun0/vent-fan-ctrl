@@ -20,12 +20,15 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
+#include "crc.h"
+#include "iwdg.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <common_param.h>
+#include <meta.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,18 +49,71 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+const meta_data_t __attribute__((section(".boot_vers_sec"))) bootloader_version;
+const meta_data_t __attribute__((section(".app_vers_sec"))) application_version =
+{
+		.version = VERSION_FULL_STRING,
+		.build_date = BUILD_DATE,
+		//.target_cpu = CPU,
+		.crc = UINT32_MAX
+};
 
+
+               __attribute__((section(".calib_ram_sec")))   common_param_t param;
+volatile const __attribute__((section(".calib_flash_sec"))) common_param_t param_flash;
+const common_param_t param_def =
+{
+	.crc = 0,
+	.size = COMMON_PARAM_SIZE,
+	.xcp_canid_rx = XCP_BASE_ID,
+	.xcp_canid_tx = XCP_BASE_ID + 1,
+	.uds_canid_rx = 0,
+	.uds_canid_func = 0,
+	.uds_canid_tx = 0,
+	.ip_mac = {},
+	.ip_v4 = {},
+	.ip_port_xcp = 0,
+	.id = 0
+};
+
+uint32_t xcp_base_id = XCP_BASE_ID;
+uint16_t config_number = 0;
+extern uint32_t xcp_can_is_active;
+
+var_t __attribute__((section(".var_ram_sec"))) v;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void try_read_xcp_id(void);
+void load_param(void);
 
+void deinit_perif(void) {};
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_RxHeaderTypeDef rx_header;
+	uint8_t data[8];
 
+	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, data) != HAL_OK) return;
+
+	can_platform_msg_recieve(&rx_header, data);
+
+}
+
+void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
+{
+	HAL_CAN_RxFifo0MsgPendingCallback(hcan);
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+	return;
+}
 /* USER CODE END 0 */
 
 /**
@@ -68,7 +124,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  memset(&v, 0 , sizeof(v));
+  memset(&param, 0 , sizeof(param));
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -92,24 +149,47 @@ int main(void)
   MX_CAN_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_CRC_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  can_platform_init();
+
+  load_param();
+  try_read_xcp_id();
+
+  xcp_can_init(0, 0, xcp_base_id);
+
+  __enable_irq();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  xcp_can_poll();
 	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	  HAL_Delay(50);
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-	  HAL_Delay(50);
-	  htim2.Instance->CCR1 += 10;
-	  if (htim2.Instance->CCR1 > 1000) htim2.Instance->CCR1 = 0;
+	  uint32_t tick = HAL_GetTick() % 500;
+	  if(tick < 100)
+	  {
+		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+	  }
+	  else if(xcp_can_is_active && tick >= 200 && tick < 300)
+	  {
+		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+	  }
+	  else
+	  {
+		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+	  }
+//	  htim2.Instance->CCR1 += 10;
+//	  if (htim2.Instance->CCR1 > 1000) htim2.Instance->CCR1 = 0;
+	  v.cntr++;
+
+	  HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END 3 */
 }
@@ -127,10 +207,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -161,7 +242,39 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void try_read_xcp_id(void)
+{
+	if(param.xcp_canid_tx == param.xcp_canid_rx + 1 && param.xcp_canid_rx != 0xFFFFFFFF)
+	{
+		xcp_base_id = param.xcp_canid_rx;
+	}
+	else
+	{
+		xcp_base_id += config_number * 2;
+	}
+}
 
+void load_param(void)
+{
+	uint32_t crc = 0;
+
+	// Load defaul params
+	memcpy(&param, &param_def, param_def.size);
+
+	//Check saved params and load
+	if(param_flash.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.size != 0) && (param_flash.size % 4 == 0))
+	{
+		crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.size, param_flash.size / 4 - 1);
+		if(param_flash.crc == crc)
+		{
+			memcpy(&param, (const void *)&param_flash, param_flash.size);
+		}
+	}
+
+	//Recalc CRC
+	crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
+	param.crc = crc;
+}
 /* USER CODE END 4 */
 
 /**

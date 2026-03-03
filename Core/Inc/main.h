@@ -31,12 +31,18 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can_platform.h"
+#include "xcp_client_can.h"
+#include "xcp_platform.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef struct
+{
+	uint32_t cntr;
+	uint32_t test;
+} var_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
