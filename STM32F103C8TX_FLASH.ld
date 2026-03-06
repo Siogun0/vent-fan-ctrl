@@ -196,17 +196,21 @@ SECTIONS
   /* Variables struct section */
   .var_ram (NOLOAD) :
   {
+     _start_var_ram = .;
      . = ALIGN(4);
      KEEP(*(.var_ram_sec))
      KEEP(*(.var_ram_sec*))
      . = ALIGN(4);
+     _end_var_ram = .;
   } >VAR_RAM
 
   /* Calibration support */
   .calib_ram (NOLOAD):
   {
+    _start_calib_ram = .;         /* define a global symbol at calib_ram start */
     . = ALIGN(4);
   	KEEP(*(.calib_ram_sec*));
+    _end_calib_ram = .;           /* define a global symbol at calib_ram end */
   } >CALRAM
   
   .calib_flash (NOLOAD):

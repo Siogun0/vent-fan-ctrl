@@ -42,6 +42,7 @@ typedef struct
 {
 	uint32_t cntr;
 	uint32_t test;
+	uint32_t update_boot;
 } var_t;
 /* USER CODE END ET */
 

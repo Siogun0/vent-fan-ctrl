@@ -77,7 +77,7 @@ void HAL_MspInit(void)
   __HAL_AFIO_REMAP_SWJ_NOJTAG();
 
   /* USER CODE BEGIN MspInit 1 */
-
+  __HAL_RCC_BKP_CLK_ENABLE();
   /* USER CODE END MspInit 1 */
 }
 

@@ -80,6 +80,10 @@ uint32_t xcp_base_id = XCP_BASE_ID;
 uint16_t config_number = 0;
 extern uint32_t xcp_can_is_active;
 
+extern uint32_t _start_calib_ram[];
+extern uint32_t _end_calib_ram[];
+extern t_xcp_download_cb update_values;
+
 var_t __attribute__((section(".var_ram_sec"))) v;
 /* USER CODE END PV */
 
@@ -88,6 +92,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void try_read_xcp_id(void);
 void load_param(void);
+void update_param_crc(uint32_t address);
 
 void deinit_perif(void) {};
 /* USER CODE END PFP */
@@ -125,7 +130,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   memset(&v, 0 , sizeof(v));
-  memset(&param, 0 , sizeof(param));
+  memset(&_start_calib_ram, 0xFF , SECTOR_SIZE);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -160,6 +165,7 @@ int main(void)
 
   xcp_can_init(0, 0, xcp_base_id);
 
+  update_values = update_param_crc;
   __enable_irq();
   /* USER CODE END 2 */
 
@@ -188,6 +194,11 @@ int main(void)
 //	  htim2.Instance->CCR1 += 10;
 //	  if (htim2.Instance->CCR1 > 1000) htim2.Instance->CCR1 = 0;
 	  v.cntr++;
+	  if(v.update_boot == 1)
+	  {
+		  set_flash_bootloader();
+		  v.update_boot = 2;
+	  }
 
 	  HAL_IWDG_Refresh(&hiwdg);
   }
@@ -250,6 +261,7 @@ void try_read_xcp_id(void)
 	}
 	else
 	{
+
 		xcp_base_id += config_number * 2;
 	}
 }
@@ -272,8 +284,15 @@ void load_param(void)
 	}
 
 	//Recalc CRC
-	crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
-	param.crc = crc;
+	param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
+}
+
+void update_param_crc(uint32_t address)
+{
+	if(address >= (uint32_t)&param && address < (uint32_t)&param + sizeof(param))
+	{
+		param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
+	}
 }
 /* USER CODE END 4 */
 
