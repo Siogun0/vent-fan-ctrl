@@ -38,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define CONV(x, y)	((uint32_t)(((float)x * y) + 0.5f))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,6 +84,9 @@ extern uint32_t _start_calib_ram[];
 extern uint32_t _end_calib_ram[];
 extern t_xcp_download_cb update_values;
 
+volatile t_can_node_fan_ctrl_bus0_input can_in;
+volatile t_can_node_fan_ctrl_bus0_output can_out;
+
 var_t __attribute__((section(".var_ram_sec"))) v;
 /* USER CODE END PV */
 
@@ -95,10 +98,35 @@ void load_param(void);
 void update_param_crc(uint32_t address);
 
 void deinit_perif(void) {};
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc)
+{
+	can_out.FAN_STATUS.FAN_1_ACT = v.FAN_1_ACT;
+	can_out.FAN_STATUS.FAN_2_ACT = v.FAN_2_ACT;
+	can_out.FAN_STATUS.FAN_3_ACT = v.FAN_3_ACT;
+	can_out.FAN_STATUS.FAN_4_ACT = v.FAN_4_ACT;
+}
+
+void platform_can_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc)
+{
+	float mux = (float)htim2.Init.Period / 100.0f;
+
+	v.FAN_1_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_1_REQ, 100);
+	v.FAN_2_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_2_REQ, 100);
+	v.FAN_3_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_3_REQ, 100);
+	v.FAN_4_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_4_REQ, 100);
+
+	htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+	htim2.Instance->CCR2 = CONV(v.FAN_2_ACT, mux);
+	htim2.Instance->CCR3 = CONV(v.FAN_3_ACT, mux);
+	htim2.Instance->CCR4 = CONV(v.FAN_4_ACT, mux);
+}
+
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	CAN_RxHeaderTypeDef rx_header;
@@ -118,6 +146,15 @@ void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
 	return;
+}
+
+// Функция чтения АЦП (блокирующая)
+uint32_t ReadADC(void) {
+    HAL_ADC_Start(&hadc1);                    // Запускаем АЦП
+    HAL_ADC_PollForConversion(&hadc1, 100);   // Ждем завершения (100 мс таймаут)
+    uint32_t value = HAL_ADC_GetValue(&hadc1); // Получаем значение
+    HAL_ADC_Stop(&hadc1);                      // Останавливаем АЦП
+    return value;
 }
 /* USER CODE END 0 */
 
@@ -166,6 +203,10 @@ int main(void)
   xcp_can_init(0, 0, xcp_base_id);
 
   update_values = update_param_crc;
+
+  can_node_fan_ctrl_bus0_init(0, 0, &can_out, &can_in);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
   __enable_irq();
   /* USER CODE END 2 */
 
@@ -174,7 +215,16 @@ int main(void)
   while (1)
   {
 	  xcp_can_poll();
-	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+	  can_node_fan_ctrl_bus0_rx(&can_in);
+
+	  if(can_in.alive.ctrl_to_fan == 0)
+	  {
+		  float mux = (float)htim2.Init.Period / 100.0f;
+		  v.FAN_1_ACT = ReadADC() * 110 / 4096;
+		  htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+	  }
+
+	  can_node_fan_ctrl_bus0_tx(&can_out);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -191,8 +241,7 @@ int main(void)
 	  {
 		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
 	  }
-//	  htim2.Instance->CCR1 += 10;
-//	  if (htim2.Instance->CCR1 > 1000) htim2.Instance->CCR1 = 0;
+
 	  v.cntr++;
 	  if(v.update_boot == 1)
 	  {

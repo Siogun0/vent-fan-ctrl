@@ -187,7 +187,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  can_node_fan_ctrl_bus0_update_timers(uwTickFreq * 1000);
   /* USER CODE END SysTick_IRQn 1 */
 }
 

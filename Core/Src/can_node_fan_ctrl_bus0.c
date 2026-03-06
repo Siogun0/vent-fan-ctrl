@@ -108,8 +108,8 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
     uint64_t msg;
     
     //FAN_STATUS
-    msg_cntr_fan_status = out->tx_now.fan_status ? msg_cntr_fan_status : 0;
-    if(((msg_cntr_fan_status >= out->tx_now.fan_status) && out->tx_now.fan_status) || (out->tx_now.fan_status == 1))
+//    msg_cntr_fan_status = out->tx_now.fan_status ? msg_cntr_fan_status : 0;
+    if((msg_cntr_fan_status >= MSG_CYCLE_FAN_STATUS) || (out->tx_now.fan_status == 1))
     {
         msg_cntr_fan_status = 0;
         out->tx_now.fan_status = 0;
@@ -136,7 +136,7 @@ void can_node_fan_ctrl_bus0_update_timers(uint32_t time_delta_us)
     msg_cntr_fan_status += time_delta_us;
 }
 
-//====== Weak Planform driver functions declaration ======
+//====== Weak Platform driver functions declaration ======
 __attribute__((weak)) void platform_can_init_rx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc) {}
 __attribute__((weak)) void platform_can_init_tx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc){}
 __attribute__((weak)) void platform_can_xmit_mb(uint32_t bus_id, uint32_t mbn, uint64_t msg) {}

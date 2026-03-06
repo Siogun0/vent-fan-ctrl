@@ -34,6 +34,8 @@ extern "C" {
 #include "can_platform.h"
 #include "xcp_client_can.h"
 #include "xcp_platform.h"
+
+#include <can_node_fan_ctrl_bus0.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -43,6 +45,10 @@ typedef struct
 	uint32_t cntr;
 	uint32_t test;
 	uint32_t update_boot;
+    uint8_t FAN_1_ACT;
+    uint8_t FAN_2_ACT;
+    uint8_t FAN_3_ACT;
+    uint8_t FAN_4_ACT;
 } var_t;
 /* USER CODE END ET */
 

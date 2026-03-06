@@ -57,8 +57,8 @@ typedef struct
 typedef void (*t_mailbox_callback)(uint32_t id, uint64_t msg, uint32_t dlc);
 #endif
 
-#define MSG_CYCLE_FAN_STATUS 0
-#define MSG_CYCLE_CTRL_TO_FAN 0
+#define MSG_CYCLE_FAN_STATUS 100000
+#define MSG_CYCLE_CTRL_TO_FAN 100000
 
 //====== API functions ======
 void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out);
