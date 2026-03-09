@@ -2,10 +2,7 @@
 /* This file is generated automatically by dbc_conv */
 
 #include "can_node_fan_ctrl_bus0.h"
-#include <string.h>
-#include <ctype.h>
-#include <stdint.h>
-//#include "utils.h"
+
 
 static uint32_t __rx_id_shift__ = 0;
 static uint32_t __tx_id_shift__ = 0;
@@ -14,6 +11,7 @@ static uint32_t multiplexor __attribute__ ((unused));
 
 static volatile uint32_t msg_cntr_ctrl_to_fan;
 static volatile uint32_t msg_cntr_fan_status;
+static volatile uint32_t msg_cntr_fan_power;
 
 //====== Auxiliary functions ======
 static void can_node_memset(uint8_t *dst, uint32_t len)
@@ -61,7 +59,7 @@ static inline int64_t GetBitsSigned(uint64_t src, int offset, int size)
 
 uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in)
 {
-	__mb_shift__    = mb_shift;
+    __mb_shift__    = mb_shift;
     __rx_id_shift__ = rx_id_shift;
     __tx_id_shift__ = tx_id_shift;
 
@@ -69,12 +67,14 @@ uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uin
     can_node_memset((uint8_t *)in, sizeof(t_can_node_fan_ctrl_bus0_input));
     
     platform_can_init_tx_mb(0, MBN_TX_FAN_STATUS + __mb_shift__, 0x100 + __tx_id_shift__, 8);
+    platform_can_init_tx_mb(0, MBN_TX_FAN_POWER + __mb_shift__, 0x400 + __tx_id_shift__, 8);
     
     platform_can_init_rx_mb(0, MBN_RX_CTRL_TO_FAN + __mb_shift__, 0x40 + __rx_id_shift__, 8);
     
     msg_cntr_ctrl_to_fan = 2 * ALIVE_THRESHOLD;
     
     msg_cntr_fan_status = 0;
+    msg_cntr_fan_power = 0;
     return(MBN_NEXT_FREE_BUS_0 );    
 }
 
@@ -109,10 +109,9 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
     uint64_t msg;
     
     //FAN_STATUS
-//    msg_cntr_fan_status = out->tx_now.fan_status ? msg_cntr_fan_status : 0;
-    if((msg_cntr_fan_status >= MSG_CYCLE_FAN_STATUS) || (out->tx_now.fan_status == 1))
+    if((msg_cntr_fan_status >= MSG_CYCLE_FAN_STATUS) || (out->tx_now.fan_status))
     {
-        msg_cntr_fan_status = 0;
+        msg_cntr_fan_status -= out->tx_now.fan_status ? msg_cntr_fan_status : MSG_CYCLE_FAN_STATUS;
         out->tx_now.fan_status = 0;
         
         msg = 0;
@@ -127,6 +126,23 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
         
         platform_can_xmit_mb(0, MBN_TX_FAN_STATUS + __mb_shift__, msg);
     }
+    //FAN_POWER
+    if((msg_cntr_fan_power >= MSG_CYCLE_FAN_POWER) || (out->tx_now.fan_power))
+    {
+        msg_cntr_fan_power -= out->tx_now.fan_power ? msg_cntr_fan_power : MSG_CYCLE_FAN_POWER;
+        out->tx_now.fan_power = 0;
+        
+        msg = 0;
+        
+        platform_can_fan_power_cb(0x400 + __tx_id_shift__, msg, 8);
+        
+        //Sinals
+        msg |= SetBits(0, 8, (out->FAN_POWER.CPU_TEMP - -40) * (1 / 1));
+        msg |= SetBits(8, 8, (out->FAN_POWER.V_3V3 - 0.000000f) * (1 / 0.020000f));
+        msg |= SetBits(16, 8, (out->FAN_POWER.V_12V - 0.000000f) * (1 / 0.100000f));
+        
+        platform_can_xmit_mb(0, MBN_TX_FAN_POWER + __mb_shift__, msg);
+    }
 }
 
 //====== Timers functions ======
@@ -135,12 +151,23 @@ void can_node_fan_ctrl_bus0_update_timers(uint32_t time_delta_us)
 {
     msg_cntr_ctrl_to_fan += msg_cntr_ctrl_to_fan >= ALIVE_THRESHOLD * MSG_CYCLE_CTRL_TO_FAN ? 0 : time_delta_us;
     msg_cntr_fan_status += time_delta_us;
+    msg_cntr_fan_power += time_delta_us;
 }
+
+//====== Weak Planform driver functions declaration ======
+__attribute__((weak)) void platform_can_init_rx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc) {}
+__attribute__((weak)) void platform_can_init_tx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc) {}
+__attribute__((weak)) void platform_can_xmit_mb(uint32_t bus_id, uint32_t mbn, uint64_t msg) {}
+__attribute__((weak)) uint64_t platform_can_get_mb_data(uint32_t bus_id, uint32_t mbn) {return 0;}
+__attribute__((weak)) uint32_t platform_can_is_message_arrived(uint32_t bus_id, uint32_t mbn) {return 0;}
+
 
 //====== Weak Callback functions ======
 __attribute__((weak)) void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void platform_can_fan_power_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
 __attribute__((weak)) void platform_can_fan_status_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void platform_can_fan_power_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
 __attribute__((weak)) void platform_can_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
