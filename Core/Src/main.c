@@ -135,7 +135,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, data) != HAL_OK) return;
 
-	can_platform_msg_recieve(&rx_header, data);
+	platform_can_msg_recieve(&rx_header, data);
 
 }
 
@@ -197,7 +197,7 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  can_platform_init();
+  platform_can_init();
 
   load_param();
   try_read_xcp_id();
