@@ -4,6 +4,7 @@
 #ifndef __CAN_NODE_FAN_CTRL_BUS0_H__
 #define __CAN_NODE_FAN_CTRL_BUS0_H__
 #include <stdint.h>
+#include <can_platform.h>
 
 #define ALIVE_THRESHOLD 10
 
@@ -64,14 +65,7 @@ typedef void (*t_mailbox_callback)(uint32_t id, uint64_t msg, uint32_t dlc);
 void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out);
 void can_node_fan_ctrl_bus0_rx(volatile t_can_node_fan_ctrl_bus0_input *inp);
 void can_node_fan_ctrl_bus0_update_timers(uint32_t time_delta_us);
-uint8_t can_node_fan_ctrl_bus0_init(uint32_t id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in);
-
-//====== Planform driver functions declaration ======
-void platform_can_init_rx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc);
-void platform_can_init_tx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc);
-void platform_can_xmit_mb(uint32_t bus_id, uint32_t mbn, uint64_t msg);
-uint64_t platform_can_get_mb_data(uint32_t bus_id, uint32_t mbn);
-uint32_t platform_can_is_message_arrived(uint32_t bus_id, uint32_t mbn);
+uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in);
 
 //====== Callback functions ======
 void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc);

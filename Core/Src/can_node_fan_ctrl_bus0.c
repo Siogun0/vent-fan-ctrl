@@ -59,8 +59,9 @@ static inline int64_t GetBitsSigned(uint64_t src, int offset, int size)
 
 //====== Init function ======
 
-uint8_t can_node_fan_ctrl_bus0_init(uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in)
+uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in)
 {
+	__mb_shift__    = mb_shift;
     __rx_id_shift__ = rx_id_shift;
     __tx_id_shift__ = tx_id_shift;
 
@@ -84,7 +85,7 @@ void can_node_fan_ctrl_bus0_rx(volatile t_can_node_fan_ctrl_bus0_input *inp)
     uint64_t msg;
     
     //CTRL_TO_FAN
-    if(platform_can_is_message_arrived(0, MBN_RX_CTRL_TO_FAN))
+    if(platform_can_is_message_arrived(0, MBN_RX_CTRL_TO_FAN + __mb_shift__))
     {
         msg_cntr_ctrl_to_fan = 0;
         
@@ -135,14 +136,6 @@ void can_node_fan_ctrl_bus0_update_timers(uint32_t time_delta_us)
     msg_cntr_ctrl_to_fan += msg_cntr_ctrl_to_fan >= ALIVE_THRESHOLD * MSG_CYCLE_CTRL_TO_FAN ? 0 : time_delta_us;
     msg_cntr_fan_status += time_delta_us;
 }
-
-//====== Weak Platform driver functions declaration ======
-__attribute__((weak)) void platform_can_init_rx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc) {}
-__attribute__((weak)) void platform_can_init_tx_mb(uint32_t bus_id, uint32_t mbn, uint32_t id, uint32_t dlc){}
-__attribute__((weak)) void platform_can_xmit_mb(uint32_t bus_id, uint32_t mbn, uint64_t msg) {}
-__attribute__((weak)) uint64_t platform_can_get_mb_data(uint32_t bus_id, uint32_t mbn) {return 0;}
-__attribute__((weak)) uint32_t platform_can_is_message_arrived(uint32_t bus_id, uint32_t mbn) {return 0;}
-
 
 //====== Weak Callback functions ======
 __attribute__((weak)) void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}

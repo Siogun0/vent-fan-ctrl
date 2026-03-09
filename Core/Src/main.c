@@ -135,7 +135,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, data) != HAL_OK) return;
 
-	platform_can_msg_recieve(&rx_header, data);
+	platform_can_msg_recieve(0, &rx_header, data);
 
 }
 
@@ -206,7 +206,7 @@ int main(void)
 
   update_values = update_param_crc;
 
-  can_node_fan_ctrl_bus0_init(0, 0, &can_out, &can_in);
+  can_node_fan_ctrl_bus0_init(xcp_used_mbxs(), 0, 0, &can_out, &can_in);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   __enable_irq();
