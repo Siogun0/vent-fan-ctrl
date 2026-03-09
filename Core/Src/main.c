@@ -21,6 +21,7 @@
 #include "adc.h"
 #include "can.h"
 #include "crc.h"
+#include "dma.h"
 #include "iwdg.h"
 #include "tim.h"
 #include "gpio.h"
@@ -188,6 +189,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
@@ -220,7 +222,7 @@ int main(void)
 	  if(can_in.alive.ctrl_to_fan == 0)
 	  {
 		  float mux = (float)htim2.Init.Period / 100.0f;
-		  v.FAN_1_ACT = ReadADC() * 110 / 4096;
+		  v.FAN_1_ACT = ReadADC() * 104 / 4096;
 		  htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
 	  }
 

@@ -51,6 +51,24 @@ BO_ 256 FAN_STATUS: 8 FAN_CTRL
  SG_ FAN_3_ACT : 16|8@1+ (1,0) [0|0] ""  CTRL_NODE
  SG_ FAN_4_ACT : 24|8@1+ (1,0) [0|0] ""  CTRL_NODE
 
+BO_ 1024 FAN_POWER: 8 Vector__XXX
+ SG_ CPU_TEMP : 0|8@1+ (1,-40) [-40|0] "C" Vector__XXX
+ SG_ V_3V3 : 8|8@1+ (0.02,0) [0|0] "V" Vector__XXX
+ SG_ V_12V : 16|8@1+ (0.1,0) [0|0] "V" Vector__XXX
 
 
+
+BA_DEF_  "BusType" STRING ;
+BA_DEF_ BO_  "GenMsgSendType" ENUM  "cyclic","spontaneous";
+BA_DEF_ BO_  "GenMsgCycleTime" INT 2 50000;
+BA_DEF_ SG_  "GenSigalAsCrc" ENUM  "No","Yes";
+BA_DEF_ SG_  "EnableSignalCallback" ENUM  "No","Yes";
+BA_DEF_ SG_  "ClearAfterDecode" ENUM  "No","Yes";
+BA_DEF_DEF_  "BusType" "CAN";
+BA_DEF_DEF_  "GenMsgSendType" "cyclic";
+BA_DEF_DEF_  "GenMsgCycleTime" 100;
+BA_DEF_DEF_  "GenSigalAsCrc" "No";
+BA_DEF_DEF_  "EnableSignalCallback" "No";
+BA_DEF_DEF_  "ClearAfterDecode" "No";
+BA_ "GenMsgCycleTime" BO_ 1024 1000;
 
