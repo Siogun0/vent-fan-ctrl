@@ -44,7 +44,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define CONV(x, y)	((uint32_t)(((float)x * y) + 0.5f))
+#define CONV(x, y)    ((uint32_t)(((float)x * y) + 0.5f))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -53,10 +53,10 @@
 const meta_data_t __attribute__((section(".boot_vers_sec"))) bootloader_version;
 const meta_data_t __attribute__((section(".app_vers_sec"))) application_version =
 {
-		.version = VERSION_FULL_STRING,
-		.build_date = BUILD_DATE,
-		//.target_cpu = CPU,
-		.crc = UINT32_MAX
+    .version = VERSION_FULL_STRING,
+    .build_date = BUILD_DATE,
+    //.target_cpu = CPU,
+    .crc = UINT32_MAX
 };
 
 
@@ -64,17 +64,17 @@ const meta_data_t __attribute__((section(".app_vers_sec"))) application_version 
 volatile const __attribute__((section(".calib_flash_sec"))) common_param_t param_flash;
 const common_param_t param_def =
 {
-	.crc = 0,
-	.size = COMMON_PARAM_SIZE,
-	.xcp_canid_rx = XCP_BASE_ID,
-	.xcp_canid_tx = XCP_BASE_ID + 1,
-	.uds_canid_rx = 0,
-	.uds_canid_func = 0,
-	.uds_canid_tx = 0,
-	.ip_mac = {},
-	.ip_v4 = {},
-	.ip_port_xcp = 0,
-	.id = 0
+    .crc = 0,
+    .size = COMMON_PARAM_SIZE,
+    .xcp_canid_rx = XCP_BASE_ID,
+    .xcp_canid_tx = XCP_BASE_ID + 1,
+    .uds_canid_rx = 0,
+    .uds_canid_func = 0,
+    .uds_canid_tx = 0,
+    .ip_mac = {},
+    .ip_v4 = {},
+    .ip_port_xcp = 0,
+    .id = 0
 };
 
 uint32_t xcp_base_id = XCP_BASE_ID;
@@ -106,47 +106,47 @@ void deinit_perif(void) {};
 /* USER CODE BEGIN 0 */
 void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc)
 {
-	can_out.FAN_STATUS.FAN_1_ACT = v.FAN_1_ACT;
-	can_out.FAN_STATUS.FAN_2_ACT = v.FAN_2_ACT;
-	can_out.FAN_STATUS.FAN_3_ACT = v.FAN_3_ACT;
-	can_out.FAN_STATUS.FAN_4_ACT = v.FAN_4_ACT;
+    can_out.FAN_STATUS.FAN_1_ACT = v.FAN_1_ACT;
+    can_out.FAN_STATUS.FAN_2_ACT = v.FAN_2_ACT;
+    can_out.FAN_STATUS.FAN_3_ACT = v.FAN_3_ACT;
+    can_out.FAN_STATUS.FAN_4_ACT = v.FAN_4_ACT;
 }
 
 void platform_can_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc)
 {
-	float mux = (float)htim2.Init.Period / 100.0f;
+    float mux = (float)htim2.Init.Period / 100.0f;
 
-	v.FAN_1_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_1_REQ, 100);
-	v.FAN_2_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_2_REQ, 100);
-	v.FAN_3_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_3_REQ, 100);
-	v.FAN_4_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_4_REQ, 100);
+    v.FAN_1_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_1_REQ, 100);
+    v.FAN_2_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_2_REQ, 100);
+    v.FAN_3_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_3_REQ, 100);
+    v.FAN_4_ACT = CLIPH(can_in.CTRL_TO_FAN.FAN_4_REQ, 100);
 
-	htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
-	htim2.Instance->CCR2 = CONV(v.FAN_2_ACT, mux);
-	htim2.Instance->CCR3 = CONV(v.FAN_3_ACT, mux);
-	htim2.Instance->CCR4 = CONV(v.FAN_4_ACT, mux);
+    htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+    htim2.Instance->CCR2 = CONV(v.FAN_2_ACT, mux);
+    htim2.Instance->CCR3 = CONV(v.FAN_3_ACT, mux);
+    htim2.Instance->CCR4 = CONV(v.FAN_4_ACT, mux);
 }
 
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	CAN_RxHeaderTypeDef rx_header;
-	uint8_t data[8];
+    CAN_RxHeaderTypeDef rx_header;
+    uint8_t data[8];
 
-	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, data) != HAL_OK) return;
+    if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, data) != HAL_OK) return;
 
-	platform_can_msg_recieve(0, &rx_header, data);
+    platform_can_msg_recieve(0, &rx_header, data);
 
 }
 
 void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
 {
-	HAL_CAN_RxFifo0MsgPendingCallback(hcan);
+    HAL_CAN_RxFifo0MsgPendingCallback(hcan);
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
-	return;
+    return;
 }
 
 // Функция чтения АЦП (блокирующая)
@@ -217,44 +217,44 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  xcp_can_poll();
-	  can_node_fan_ctrl_bus0_rx(&can_in);
+      xcp_can_poll();
+      can_node_fan_ctrl_bus0_rx(&can_in);
 
-	  if(can_in.alive.ctrl_to_fan == 0)
-	  {
-		  float mux = (float)htim2.Init.Period / 100.0f;
-		  v.FAN_1_ACT = v.ADC[0] * 104 / 4096;
-		  htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
-	  }
+      if(can_in.alive.ctrl_to_fan == 0)
+      {
+          float mux = (float)htim2.Init.Period / 100.0f;
+          v.FAN_1_ACT = v.ADC[0] * 104 / 4096;
+          htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+      }
 
-	  v.VCC = Calculate_VDD(v.ADC[ADC_VCC]);
-	  v.CPU_temp = Calculate_Temperature(v.ADC[ADC_TEMP], v.VCC);
-	  can_node_fan_ctrl_bus0_tx(&can_out);
+      v.VCC = Calculate_VDD(v.ADC[ADC_VCC]);
+      v.CPU_temp = Calculate_Temperature(v.ADC[ADC_TEMP], v.VCC);
+      can_node_fan_ctrl_bus0_tx(&can_out);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  uint32_t tick = HAL_GetTick() % 500;
-	  if(tick < 100)
-	  {
-		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-	  }
-	  else if(xcp_can_is_active && tick >= 200 && tick < 300)
-	  {
-		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-	  }
-	  else
-	  {
-		  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	  }
+      uint32_t tick = HAL_GetTick() % 500;
+      if(tick < 100)
+      {
+          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+      }
+      else if(xcp_can_is_active && tick >= 200 && tick < 300)
+      {
+          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+      }
+      else
+      {
+          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+      }
 
-	  v.cntr++;
-	  if(v.update_boot == 1)
-	  {
-		  set_flash_bootloader();
-		  v.update_boot = 2;
-	  }
+      v.cntr++;
+      if(v.update_boot == 1)
+      {
+          set_flash_bootloader();
+          v.update_boot = 2;
+      }
 
-	  HAL_IWDG_Refresh(&hiwdg);
+      HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END 3 */
 }
@@ -309,44 +309,44 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void try_read_xcp_id(void)
 {
-	if(param.xcp_canid_tx == param.xcp_canid_rx + 1 && param.xcp_canid_rx != 0xFFFFFFFF)
-	{
-		xcp_base_id = param.xcp_canid_rx;
-	}
-	else
-	{
+    if(param.xcp_canid_tx == param.xcp_canid_rx + 1 && param.xcp_canid_rx != 0xFFFFFFFF)
+    {
+        xcp_base_id = param.xcp_canid_rx;
+    }
+    else
+    {
 
-		xcp_base_id += config_number * 2;
-	}
+        xcp_base_id += config_number * 2;
+    }
 }
 
 void load_param(void)
 {
-	uint32_t crc = 0;
+    uint32_t crc = 0;
 
-	// Load defaul params
-	memcpy(&param, &param_def, param_def.size);
+    // Load defaul params
+    memcpy(&param, &param_def, param_def.size);
 
-	//Check saved params and load
-	if(param_flash.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.size != 0) && (param_flash.size % 4 == 0))
-	{
-		crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.size, param_flash.size / 4 - 1);
-		if(param_flash.crc == crc)
-		{
-			memcpy(&param, (const void *)&param_flash, param_flash.size);
-		}
-	}
+    //Check saved params and load
+    if(param_flash.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.size != 0) && (param_flash.size % 4 == 0))
+    {
+        crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.size, param_flash.size / 4 - 1);
+        if(param_flash.crc == crc)
+        {
+            memcpy(&param, (const void *)&param_flash, param_flash.size);
+        }
+    }
 
-	//Recalc CRC
-	param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
+    //Recalc CRC
+    param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
 }
 
 void update_param_crc(uint32_t address)
 {
-	if(address >= (uint32_t)&param && address < (uint32_t)&param + sizeof(param))
-	{
-		param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
-	}
+    if(address >= (uint32_t)&param && address < (uint32_t)&param + sizeof(param))
+    {
+        param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
+    }
 }
 /* USER CODE END 4 */
 

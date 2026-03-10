@@ -27,32 +27,32 @@ volatile uint16_t adc_buffer[ADC_BUFFER_SIZE];
 #pragma GCC optimize ("Ofast")
 void ADC_Average(uint16_t* buf)
 {
-	for(int c = 0; c < ADC_CHANNELS; ++c)
-	{
-		uint32_t acc = 0;
-		for(int i = 0; i < ADC_SAMPLES; ++i)
-		{
-			acc += buf[c + (i * ADC_CHANNELS)];
-		}
-		v.ADC[c] = (acc + (1<<(ADC_BIN_SHIFT - 1))) >> ADC_BIN_SHIFT;
-	}
+    for(int c = 0; c < ADC_CHANNELS; ++c)
+    {
+        uint32_t acc = 0;
+        for(int i = 0; i < ADC_SAMPLES; ++i)
+        {
+            acc += buf[c + (i * ADC_CHANNELS)];
+        }
+        v.ADC[c] = (acc + (1<<(ADC_BIN_SHIFT - 1))) >> ADC_BIN_SHIFT;
+    }
 }
 #pragma GCC pop_options
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	ADC_Average((uint16_t*)&adc_buffer[ADC_DATA_SIZE]);
+    ADC_Average((uint16_t*)&adc_buffer[ADC_DATA_SIZE]);
 }
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	ADC_Average((uint16_t*)&adc_buffer[0]);
+    ADC_Average((uint16_t*)&adc_buffer[0]);
 }
 
 void ADC_Start(void)
 {
-	HAL_ADCEx_Calibration_Start(&hadc1);
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_SIZE);
+    HAL_ADCEx_Calibration_Start(&hadc1);
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_SIZE);
 }
 
 // Расчет напряжения питания из VREFINT
