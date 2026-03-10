@@ -227,7 +227,8 @@ int main(void)
 		  htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
 	  }
 
-	  v.CPU_temp = (1.43f - v.ADC[3] * (3.3f / 4096.0f))/4.3f + 25.0f;
+	  v.VCC = Calculate_VDD(v.ADC[ADC_VCC]);
+	  v.CPU_temp = Calculate_Temperature(v.ADC[ADC_TEMP], v.VCC);
 	  can_node_fan_ctrl_bus0_tx(&can_out);
     /* USER CODE END WHILE */
 

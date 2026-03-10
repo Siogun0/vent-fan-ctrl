@@ -49,8 +49,9 @@ typedef struct
     uint8_t FAN_2_ACT;		//0x20003C0D
     uint8_t FAN_3_ACT;		//0x20003C0E
     uint8_t FAN_4_ACT;		//0x20003C0F
-    uint16_t ADC[4];		//0x20003C10, 0x20003C12, 0x20003C14, 0x20003C16
-    float CPU_temp;			//0x20003C18
+    uint16_t ADC[8];		//0x20003C10, 0x20003C12, 0x20003C14, 0x20003C16, 0x20003C18
+    float CPU_temp;			//0x20003C20
+    float VCC;				//0x20003C24
 } var_t;
 /* USER CODE END ET */
 
