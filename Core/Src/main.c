@@ -28,7 +28,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <common_param.h>
 #include <meta.h>
 /* USER CODE END Includes */
 
@@ -60,21 +59,24 @@ const meta_data_t __attribute__((section(".app_vers_sec"))) application_version 
 };
 
 
-               __attribute__((section(".calib_ram_sec")))   common_param_t param;
-volatile const __attribute__((section(".calib_flash_sec"))) common_param_t param_flash;
-const common_param_t param_def =
+               __attribute__((section(".calib_ram_sec")))   param_t param;
+volatile const __attribute__((section(".calib_flash_sec"))) param_t param_flash;
+const param_t param_def =
 {
+    .common.crc = 0,
+    .common.size = sizeof(common_param_t),
+    .common.xcp_canid_rx = XCP_BASE_ID,
+    .common.xcp_canid_tx = XCP_BASE_ID + 1,
+    .common.uds_canid_rx = 0,
+    .common.uds_canid_func = 0,
+    .common.uds_canid_tx = 0,
+    .common.ip_mac = {},
+    .common.ip_v4 = {},
+    .common.ip_port_xcp = 0,
+    .common.id = 0,
+
     .crc = 0,
-    .size = COMMON_PARAM_SIZE,
-    .xcp_canid_rx = XCP_BASE_ID,
-    .xcp_canid_tx = XCP_BASE_ID + 1,
-    .uds_canid_rx = 0,
-    .uds_canid_func = 0,
-    .uds_canid_tx = 0,
-    .ip_mac = {},
-    .ip_v4 = {},
-    .ip_port_xcp = 0,
-    .id = 0
+    .size = sizeof(param_t) - sizeof(common_param_t)
 };
 
 uint32_t xcp_base_id = XCP_BASE_ID;
@@ -309,41 +311,54 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void try_read_xcp_id(void)
 {
-    if(param.xcp_canid_tx == param.xcp_canid_rx + 1 && param.xcp_canid_rx != 0xFFFFFFFF)
+    if(param.common.xcp_canid_tx == param.common.xcp_canid_rx + 1 && param.common.xcp_canid_rx != 0xFFFFFFFF)
     {
-        xcp_base_id = param.xcp_canid_rx;
+        xcp_base_id = param.common.xcp_canid_rx;
     }
     else
     {
-
         xcp_base_id += config_number * 2;
     }
 }
 
 void load_param(void)
 {
+    static_assert(sizeof(common_param_t) == COMMON_PARAM_SIZE, "Size of common param must be 64");
     uint32_t crc = 0;
 
     // Load defaul params
-    memcpy(&param, &param_def, param_def.size);
+    memcpy(&param, &param_def, sizeof(param_t));
 
-    //Check saved params and load
-    if(param_flash.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.size != 0) && (param_flash.size % 4 == 0))
+    //Check saved common.params and load
+    if(param_flash.common.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.common.size != 0) && (param_flash.common.size % 4 == 0))
     {
-        crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.size, param_flash.size / 4 - 1);
-        if(param_flash.crc == crc)
+        crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.common.size, param_flash.common.size / 4 - 1);
+        if(param_flash.common.crc == crc)
         {
-            memcpy(&param, (const void *)&param_flash, param_flash.size);
+            if(param_flash.size <= (SECTORS_FOR_PARAM * SECTOR_SIZE) && (param_flash.size != 0) && (param_flash.size % 4 == 0))
+            {
+                crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param_flash.size, param_flash.size / 4 - 1);
+                if(param_flash.crc == crc)
+                {
+                    memcpy(&param, (const void *)&param_flash, param_flash.common.size + param_flash.size);
+                }
+            }
         }
     }
 
-    //Recalc CRC
+    //Recalculate CRC
+    param.common.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.common.size, param.common.size / 4 - 1);
     param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
 }
 
 void update_param_crc(uint32_t address)
 {
-    if(address >= (uint32_t)&param && address < (uint32_t)&param + sizeof(param))
+    if(address >= (uint32_t)&param.common && address < (uint32_t)&param.common + sizeof(common_param_t))
+    {
+        param.common.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.common.size, param.common.size / 4 - 1);
+    }
+
+    if(address >= (uint32_t)&param.crc && address < (uint32_t)&param + sizeof(param_t))
     {
         param.crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)&param.size, param.size / 4 - 1);
     }

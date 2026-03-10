@@ -34,6 +34,7 @@ extern "C" {
 #include "can_platform.h"
 #include "xcp_client_can.h"
 #include "xcp_platform.h"
+#include <common_param.h>
 
 #include <can_node_fan_ctrl_bus0.h>
 /* USER CODE END Includes */
@@ -49,10 +50,18 @@ typedef struct
     uint8_t FAN_2_ACT;		//0x20003C0D
     uint8_t FAN_3_ACT;		//0x20003C0E
     uint8_t FAN_4_ACT;		//0x20003C0F
-    uint16_t ADC[8];		//0x20003C10, 0x20003C12, 0x20003C14, 0x20003C16, 0x20003C18
+    uint16_t ADC[8];		//0x20003C10, 0x20003C12, 0x20003C14, 0x20003C16,..., 0x20003C1E
     float CPU_temp;			//0x20003C20
     float VCC;				//0x20003C24
 } var_t;
+
+
+typedef struct
+{
+    common_param_t common;
+    uint32_t crc;
+    uint32_t size;
+} param_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
