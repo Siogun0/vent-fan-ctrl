@@ -42,19 +42,21 @@ extern "C" {
 /* USER CODE BEGIN ET */
 typedef struct
 {
-	uint32_t cntr;
-	uint32_t test;
-	uint32_t update_boot;
-    uint8_t FAN_1_ACT;
-    uint8_t FAN_2_ACT;
-    uint8_t FAN_3_ACT;
-    uint8_t FAN_4_ACT;
+	uint32_t cntr;			//0x20003C00
+	uint32_t test;			//0x20003C04
+	uint32_t update_boot;	//0x20003C08
+    uint8_t FAN_1_ACT;		//0x20003C0C
+    uint8_t FAN_2_ACT;		//0x20003C0D
+    uint8_t FAN_3_ACT;		//0x20003C0E
+    uint8_t FAN_4_ACT;		//0x20003C0F
+    uint16_t ADC[4];		//0x20003C10, 0x20003C12, 0x20003C14, 0x20003C16
+    float CPU_temp;			//0x20003C18
 } var_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+extern var_t v;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

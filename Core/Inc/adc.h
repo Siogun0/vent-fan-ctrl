@@ -35,13 +35,17 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-
+#define ADC_CHANNELS    4
+#define ADC_BIN_SHIFT	5
+#define ADC_SAMPLES     (1<<ADC_BIN_SHIFT)
+#define ADC_DATA_SIZE   (ADC_CHANNELS * ADC_SAMPLES)
+#define ADC_BUFFER_SIZE (ADC_DATA_SIZE * 2)
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void ADC_Start(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

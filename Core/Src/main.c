@@ -39,12 +39,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CONV(x, y)	((uint32_t)(((float)x * y) + 0.5f))
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define CONV(x, y)	((uint32_t)(((float)x * y) + 0.5f))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -208,6 +208,7 @@ int main(void)
 
   can_node_fan_ctrl_bus0_init(xcp_used_mbxs(), 0, 0, &can_out, &can_in);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  ADC_Start();
 
   __enable_irq();
   /* USER CODE END 2 */
@@ -222,10 +223,11 @@ int main(void)
 	  if(can_in.alive.ctrl_to_fan == 0)
 	  {
 		  float mux = (float)htim2.Init.Period / 100.0f;
-		  v.FAN_1_ACT = ReadADC() * 104 / 4096;
+		  v.FAN_1_ACT = v.ADC[0] * 104 / 4096;
 		  htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
 	  }
 
+	  v.CPU_temp = (1.43f - v.ADC[3] * (3.3f / 4096.0f))/4.3f + 25.0f;
 	  can_node_fan_ctrl_bus0_tx(&can_out);
     /* USER CODE END WHILE */
 
