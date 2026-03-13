@@ -4,6 +4,7 @@ vent-common
 MetaData
 bn.h
 personal.h
+*.prefs
 
 # Prerequisites
 *.d

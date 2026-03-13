@@ -1,7 +1,7 @@
 /* Do not edit */
 /* This file is generated automatically by dbc_conv */
 
-#include "can_node_fan_ctrl_bus0.h"
+#include "can_node_fans_bus0.h"
 
 
 static uint32_t __rx_id_shift__ = 0;
@@ -57,14 +57,14 @@ static inline int64_t GetBitsSigned(uint64_t src, int offset, int size)
 
 //====== Init function ======
 
-uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fan_ctrl_bus0_output *out, volatile t_can_node_fan_ctrl_bus0_input *in)
+uint8_t can_node_fans_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uint32_t tx_id_shift, volatile t_can_node_fans_bus0_output *out, volatile t_can_node_fans_bus0_input *in)
 {
     __mb_shift__    = mb_shift;
     __rx_id_shift__ = rx_id_shift;
     __tx_id_shift__ = tx_id_shift;
 
-    can_node_memset((uint8_t *)out, sizeof(t_can_node_fan_ctrl_bus0_output));
-    can_node_memset((uint8_t *)in, sizeof(t_can_node_fan_ctrl_bus0_input));
+    can_node_memset((uint8_t *)out, sizeof(t_can_node_fans_bus0_output));
+    can_node_memset((uint8_t *)in, sizeof(t_can_node_fans_bus0_input));
     
     platform_can_init_tx_mb(0, MBN_TX_FAN_STATUS + __mb_shift__, 0x100 + __tx_id_shift__, 8);
     platform_can_init_tx_mb(0, MBN_TX_FAN_POWER + __mb_shift__, 0x400 + __tx_id_shift__, 8);
@@ -80,7 +80,7 @@ uint8_t can_node_fan_ctrl_bus0_init(uint32_t mb_shift, uint32_t rx_id_shift, uin
 
 //====== Receive functions ======
 
-void can_node_fan_ctrl_bus0_rx(volatile t_can_node_fan_ctrl_bus0_input *inp)
+void can_node_fans_bus0_rx(volatile t_can_node_fans_bus0_input *inp)
 {
     uint64_t msg;
     
@@ -96,7 +96,7 @@ void can_node_fan_ctrl_bus0_rx(volatile t_can_node_fan_ctrl_bus0_input *inp)
         inp->CTRL_TO_FAN.FAN_3_REQ = ((uint8_t)GetBits(msg, 16, 8));
         inp->CTRL_TO_FAN.FAN_4_REQ = ((uint8_t)GetBits(msg, 24, 8));
         
-        platform_can_ctrl_to_fan_cb(0x40 + __rx_id_shift__, msg, 8);
+        can_node_ctrl_to_fan_cb(0x40 + __rx_id_shift__, msg, 8);
     }
     inp->alive.ctrl_to_fan = msg_cntr_ctrl_to_fan >= ALIVE_THRESHOLD * MSG_CYCLE_CTRL_TO_FAN ? 0 : 1;
     
@@ -104,7 +104,7 @@ void can_node_fan_ctrl_bus0_rx(volatile t_can_node_fan_ctrl_bus0_input *inp)
 
 //====== Transmit functions ======
 
-void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
+void can_node_fans_bus0_tx(volatile t_can_node_fans_bus0_output *out)
 {
     uint64_t msg;
     
@@ -116,7 +116,7 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
         
         msg = 0;
         
-        platform_can_fan_status_cb(0x100 + __tx_id_shift__, msg, 8);
+        can_node_fan_status_cb(0x100 + __tx_id_shift__, msg, 8);
         
         //Sinals
         msg |= SetBits(0, 8, (out->FAN_STATUS.FAN_1_ACT));
@@ -134,7 +134,7 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
         
         msg = 0;
         
-        platform_can_fan_power_cb(0x400 + __tx_id_shift__, msg, 8);
+        can_node_fan_power_cb(0x400 + __tx_id_shift__, msg, 8);
         
         //Sinals
         msg |= SetBits(0, 8, (out->FAN_POWER.CPU_TEMP - -40) * (1 / 1));
@@ -147,7 +147,7 @@ void can_node_fan_ctrl_bus0_tx(volatile t_can_node_fan_ctrl_bus0_output *out)
 
 //====== Timers functions ======
 
-void can_node_fan_ctrl_bus0_update_timers(uint32_t time_delta_us)
+void can_node_fans_bus0_update_timers(uint32_t time_delta_us)
 {
     msg_cntr_ctrl_to_fan += msg_cntr_ctrl_to_fan >= ALIVE_THRESHOLD * MSG_CYCLE_CTRL_TO_FAN ? 0 : time_delta_us;
     msg_cntr_fan_status += time_delta_us;
@@ -163,12 +163,12 @@ __attribute__((weak)) uint32_t platform_can_is_message_arrived(uint32_t bus_id, 
 
 
 //====== Weak Callback functions ======
-__attribute__((weak)) void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
-__attribute__((weak)) void platform_can_fan_power_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void can_node_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void can_node_fan_power_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
-__attribute__((weak)) void platform_can_fan_status_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
-__attribute__((weak)) void platform_can_fan_power_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void can_node_fan_status_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void can_node_fan_power_checksum_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
-__attribute__((weak)) void platform_can_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
+__attribute__((weak)) void can_node_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc) {}
 
 

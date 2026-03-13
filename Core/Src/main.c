@@ -87,8 +87,8 @@ extern uint32_t _start_calib_ram[];
 extern uint32_t _end_calib_ram[];
 extern t_xcp_download_cb update_values;
 
-volatile t_can_node_fan_ctrl_bus0_input can_in;
-volatile t_can_node_fan_ctrl_bus0_output can_out;
+volatile t_can_node_fans_bus0_input can_in;
+volatile t_can_node_fans_bus0_output can_out;
 
 var_t __attribute__((section(".var_ram_sec"))) v;
 /* USER CODE END PV */
@@ -106,7 +106,7 @@ void deinit_perif(void) {};
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc)
+void can_node_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc)
 {
     can_out.FAN_STATUS.FAN_1_ACT = v.FAN_1_ACT;
     can_out.FAN_STATUS.FAN_2_ACT = v.FAN_2_ACT;
@@ -114,7 +114,7 @@ void platform_can_fan_status_cb(uint32_t id, uint64_t msg, uint32_t dlc)
     can_out.FAN_STATUS.FAN_4_ACT = v.FAN_4_ACT;
 }
 
-void platform_can_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc)
+void can_node_ctrl_to_fan_cb(uint32_t id, uint64_t msg, uint32_t dlc)
 {
     float mux = (float)htim2.Init.Period / 100.0f;
 
@@ -151,14 +151,6 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
     return;
 }
 
-// Функция чтения АЦП (блокирующая)
-uint32_t ReadADC(void) {
-    HAL_ADC_Start(&hadc1);                    // Запускаем АЦП
-    HAL_ADC_PollForConversion(&hadc1, 100);   // Ждем завершения (100 мс таймаут)
-    uint32_t value = HAL_ADC_GetValue(&hadc1); // Получаем значение
-    HAL_ADC_Stop(&hadc1);                      // Останавливаем АЦП
-    return value;
-}
 /* USER CODE END 0 */
 
 /**
@@ -208,7 +200,7 @@ int main(void)
 
   update_values = update_param_crc;
 
-  can_node_fan_ctrl_bus0_init(xcp_used_mbxs(), 0, 0, &can_out, &can_in);
+  can_node_fans_bus0_init(xcp_used_mbxs(), 0, 0, &can_out, &can_in);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   ADC_Start();
 
@@ -220,18 +212,20 @@ int main(void)
   while (1)
   {
       xcp_can_poll();
-      can_node_fan_ctrl_bus0_rx(&can_in);
+      can_node_fans_bus0_rx(&can_in);
 
       if(can_in.alive.ctrl_to_fan == 0)
       {
           float mux = (float)htim2.Init.Period / 100.0f;
           v.FAN_1_ACT = v.ADC[0] * 104 / 4096;
-          htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+//          htim2.Instance->CCR1 = CONV(v.FAN_1_ACT, mux);
+//          htim2.Instance->CCR2 = 50;
+//          htim2.Instance->CCR3 = 50;
       }
 
       v.VCC = Calculate_VDD(v.ADC[ADC_VCC]);
       v.CPU_temp = Calculate_Temperature(v.ADC[ADC_TEMP], v.VCC);
-      can_node_fan_ctrl_bus0_tx(&can_out);
+      can_node_fans_bus0_tx(&can_out);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -239,14 +233,17 @@ int main(void)
       if(tick < 100)
       {
           HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
       }
       else if(xcp_can_is_active && tick >= 200 && tick < 300)
       {
           HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
       }
       else
       {
           HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
       }
 
       v.cntr++;

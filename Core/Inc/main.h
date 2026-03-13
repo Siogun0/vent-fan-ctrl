@@ -34,9 +34,9 @@ extern "C" {
 #include "can_platform.h"
 #include "xcp_client_can.h"
 #include "xcp_platform.h"
-#include <common_param.h>
+#include "common_param.h"
 
-#include <can_node_fan_ctrl_bus0.h>
+#include "can_node_fans_bus0.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
